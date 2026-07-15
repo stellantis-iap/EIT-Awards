@@ -94,7 +94,7 @@
   fieldset{border:1px solid var(--border);border-radius:8px;padding:16px;margin:0 0 16px;}
   legend{font-size:12px;color:var(--amber);font-weight:700;padding:0 6px;text-transform:uppercase;letter-spacing:0.4px;}
 
-  /* category slots */
+  /* category */
   .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
   .slot{
     border:1px solid var(--border);border-radius:8px;padding:14px 12px;text-align:center;
@@ -259,9 +259,9 @@
       </div>
 
       <fieldset>
-        <legend>Category slot</legend>
+        <legend>Category </legend>
         <div class="slots" id="slots"></div>
-        <p class="hint" id="slot-hint">Enter a plant name above to see available category slots.</p>
+        <p class="hint" id="slot-hint">Enter a plant name above to see available category.</p>
       </fieldset>
 
       <div class="grid">
@@ -354,7 +354,7 @@
   <div class="view" id="view-board">
     <div class="panel">
       <h2>Category Board</h2>
-      <p class="sub">Live view of every plant's five category slots.</p>
+      <p class="sub">Live view of every plant's five category.</p>
       <div id="boardGrid"></div>
     </div>
   </div>
@@ -624,7 +624,7 @@
   addTeamRow();
   document.getElementById('addMember').addEventListener('click', function(){ addTeamRow(); });
 
-  // ---------- Category slots ----------
+  // ---------- Category ----------
   var selectedCategory = null;
   var slotsEl = document.getElementById('slots');
   var plantInput = document.getElementById('f-plant');
@@ -767,7 +767,7 @@
 
     var missing = [];
     if(!plant) missing.push('Plant');
-    if(!selectedCategory) missing.push('Category slot');
+    if(!selectedCategory) missing.push('Category');
     if(!projectName) missing.push('Project name');
     if(!dept) missing.push('Department');
     if(!leaderName || !leaderEmail) missing.push('Project leader name & email');

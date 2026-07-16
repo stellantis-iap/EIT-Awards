@@ -657,7 +657,7 @@
       var isApproved = !!approvedMap[cat.name];
       var div = document.createElement('div');
       div.className = 'slot ' + (selectedCategory === cat.name ? 'selected' : 'open');
-      var statusLabel = selectedCategory === cat.name ? 'Selected' : (isApproved ? 'Open (already has an approved project)' : 'Open');
+      var statusLabel = selectedCategory === cat.name ? 'Selected' : (isApproved ? 'Open' : 'Open');
       div.innerHTML = '<div class="n">0' + (i+1) + '</div><div class="name">' + esc(cat.name) + '</div>' +
         '<div class="sub">' + esc(cat.sub) + '</div>' +
         '<span class="status">' + statusLabel + '</span>';
@@ -671,7 +671,7 @@
     if(plantName.trim()){
       var approvedCount = Object.keys(approvedMap).length;
       hint.textContent = approvedCount
-        ? approvedCount + ' of 3 categories already have an approved project for "' + plantName.trim() + '". All categories are still open to submit — the Plant Manager can only approve one project per category per plant.'
+        ? approvedCount + ' of 4 categories already have an approved project for "' + plantName.trim() + '". All categories are still open to submit — the Plant Manager can only approve one project per category per plant.'
         : 'No approved projects yet for "' + plantName.trim() + '". All three categories are open.';
     } else {
       hint.textContent = 'Enter a plant name above, then pick a category.';

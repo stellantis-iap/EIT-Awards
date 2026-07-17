@@ -533,7 +533,237 @@
   // ---------- Backend (Google Sheets via Apps Script) ----------
   var CONFIG = {
     // Paste your deployed Apps Script Web App URL here (see Code.gs setup notes).
-    API_URL: 'https://script.google.com/macros/s/AKfycbyNdUyuHZiZGpytyasE0vwdGaHUxBOSAWZTdoNcamZisz5IkTt5zkikUlg3c1Uzl9BSjw/exec'
+    API_URL: '    choice = Application.InputBox( _
+        "Select KPI Mode:" & vbNewLine & _
+        "1 = D (Today)" & vbNewLine & _
+        "2 = D-1 (Yesterday)", _
+        "KPI Mode", 2, Type:=1)
+
+    If choice = False Then Exit Sub
+
+    If choice = 1 Then
+        mode = "D"
+    Else
+        mode = "D-1"
+    End If
+
+    Dim refDate As Date
+    If mode = "D" Then
+        refDate = Date
+    Else
+        refDate = DateAdd("d", -1, Date)
+    End If
+
+    ' ================= SHEET =================
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("Output")
+
+    Dim lastRow As Long, lastCol As Long
+    Dim r As Long, c As Long, headerDate As Date
+
+    Dim startDate As Date
+    startDate = DateSerial(Year(refDate), Month(refDate), 1)
+
+    lastRow = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    lastCol = ws.Cells(2, ws.Columns.Count).End(xlToLeft).Column
+
+    ' ================= COLUMN DETECTION =================
+    Dim colCat As Long, colKPI As Long, colTarget As Long, colUnit As Long
+    Dim i As Long
+
+    For i = 1 To 10
+        Select Case LCase(Trim(ws.Cells(2, i).Value))
+            Case "category", "plant": colCat = i
+            Case "kpi": colKPI = i
+            Case "target": colTarget = i
+            Case "unit": colUnit = i
+        End Select
+    Next i
+
+    ' ================= MTD =================
+    Dim monthCol As Long, mName As String
+    mName = LCase(Format(refDate, "mmmm"))
+
+    For c = 5 To lastCol
+        If LCase(Trim(ws.Cells(2, c).Value)) = mName Then
+            monthCol = c
+            Exit For
+        End If
+    Next c
+
+    ' ================= HTML =================
+    Dim html As String
+
+    html = "<html><body style='margin:0;padding:0;font-family:Calibri;background:#f4f6f9;'>"
+    html = html & "<div style='max-width:900px;margin:auto;background:white;border:1px solid #666;padding:10px;'>"
+
+    html = html & "<p style='font-size:11pt;'>Dear Team,<br><br>"
+    html = html & "Please find below the GA Daily KPI status updated up to <b>" & _
+                  Format(refDate, "dd-mmm-yyyy") & "</b>.<br><br></p>"
+
+    html = html & "<div style='text-align:center;font-size:15pt;font-weight:bold;margin-bottom:10px;'>"
+    html = html & "GA Daily KPI Status - " & Format(refDate, "dd-mmm-yyyy") & "</div>"
+
+    html = html & "<table cellpadding='0' cellspacing='0' style='border-collapse:collapse;table-layout:fixed;width:100%;font-size:10pt;border:1px solid #666;'>"
+
+    ' ================= HEADER =================
+    html = html & "<tr>"
+    html = html & "<th style='width:80px;border:1px solid #666;background:#D9E1F2;'>Category</th>"
+    html = html & "<th style='width:220px;border:1px solid #666;background:#D9E1F2;'>KPI</th>"
+    html = html & "<th style='width:80px;border:1px solid #666;background:#D9E1F2;text-align:center;'>Target</th>"
+    html = html & "<th style='width:70px;border:1px solid #666;background:#D9E1F2;text-align:center;'>Unit</th>"
+
+    For c = 5 To lastCol
+        headerDate = 0
+        If IsDate(ws.Cells(2, c).Value) Then headerDate = CDate(ws.Cells(2, c).Value)
+
+        If headerDate <> 0 Then
+            If headerDate >= startDate And headerDate <= refDate Then
+
+                Dim style As String
+                style = "width:28px;border:1px solid #666;text-align:center;background:#D9E1F2;"
+
+                If Weekday(headerDate, vbMonday) = 6 Then style = style & "background:#FFF2CC;"
+                If Weekday(headerDate, vbMonday) = 7 Then style = style & "background:#F8CBAD;"
+                If headerDate = refDate Then style = style & "background:#FFD966;font-weight:bold;"
+
+                html = html & "<th style='" & style & "writing-mode:vertical-rl;transform:rotate(180deg);'>" & Format(headerDate, "dd-mmm") & "</th>"
+            End If
+        End If
+    Next c
+
+    html = html & "<th style='width:110px;border:1px solid #666;background:#C6E0B4;'>MTD</th>"
+    html = html & "</tr>"
+
+    ' ================= DATA =================
+    Dim catColor As String
+
+    For r = 3 To lastRow
+        If ws.Cells(r, colKPI).Value <> "" Then
+
+            Select Case LCase(ws.Cells(r, colCat).Value)
+                Case "SAFETY": catColor = "#E7F3FF"
+                Case "QUALITY": catColor = "#FFF2CC"
+                Case "DELIVERY": catColor = "#E2F0D9"
+                Case "COST": catColor = "#E2F0D9"
+                Case "MANAGEMENT": catColor = "#E2F0D9"
+                Case Else: catColor = "#FFFFFF"
+            End Select
+
+            html = html & "<tr style='background:" & catColor & ";'>"
+
+            html = html & "<td style='border:1px solid #666;'>" & ws.Cells(r, colCat).Text & "</td>"
+            html = html & "<td style='border:1px solid #666;'>" & ws.Cells(r, colKPI).Text & "</td>"
+            html = html & "<td style='border:1px solid #666;text-align:center;'>" & ws.Cells(r, colTarget).Text & "</td>"
+            html = html & "<td style='border:1px solid #666;text-align:center;'>" & ws.Cells(r, colUnit).Text & "</td>"
+
+            For c = 5 To lastCol
+                headerDate = 0
+                If IsDate(ws.Cells(2, c).Value) Then headerDate = CDate(ws.Cells(2, c).Value)
+
+                If headerDate <> 0 Then
+                    If headerDate >= startDate And headerDate <= refDate Then
+
+                        Dim cellStyle As String
+                        Dim cellVal As Double, targetVal As Double
+                        Dim textColor As String
+                        Dim kpiName As String
+                        Dim isHigherBetter As Boolean
+
+                        cellStyle = "border:1px solid #666;text-align:center;"
+                        textColor = ""
+
+                        If Weekday(headerDate, vbMonday) = 6 Then cellStyle = cellStyle & "background:#FFF2CC;"
+                        If Weekday(headerDate, vbMonday) = 7 Then cellStyle = cellStyle & "background:#F8CBAD;"
+                        If headerDate = refDate Then cellStyle = cellStyle & "background:#FFD966;font-weight:bold;"
+
+                        If IsNumeric(ws.Cells(r, c).Value) Then cellVal = ws.Cells(r, c).Value Else cellVal = 0
+                        If IsNumeric(ws.Cells(r, colTarget).Value) Then targetVal = ws.Cells(r, colTarget).Value Else targetVal = 0
+
+                        kpiName = LCase(ws.Cells(r, colKPI).Value)
+
+                        isHigherBetter = False
+
+                        If InStr(kpiName, "drr") > 0 Or _
+                           InStr(kpiName, "ope") > 0 Or _
+                           InStr(kpiName, "smon") > 0 Or _
+                           InStr(kpiName, "attendance") > 0 Or _
+                           InStr(kpiName, "headcount") > 0 Or _
+                           InStr(kpiName, "emon") > 0 Then
+                            isHigherBetter = True
+                        End If
+
+                        ' ? NOW APPLIED TO ALL DATES
+                        If isHigherBetter Then
+                            If cellVal >= targetVal Then
+                                textColor = "color:green;font-weight:bold;"
+                            Else
+                                textColor = "color:red;font-weight:bold;"
+                            End If
+                        Else
+                            If cellVal <= targetVal Then
+                                textColor = "color:green;font-weight:bold;"
+                            Else
+                                textColor = "color:red;font-weight:bold;"
+                            End If
+                        End If
+
+                        html = html & "<td style='" & cellStyle & textColor & "'>" & ws.Cells(r, c).Text & "</td>"
+                    End If
+                End If
+            Next c
+
+            html = html & "<td style='border:1px solid #666;background:#E2F0D9;font-weight:bold;text-align:center;'>" & ws.Cells(r, monthCol).Text & "</td>"
+            html = html & "</tr>"
+        End If
+    Next r
+
+    html = html & "</table><br><br>"
+    html = html & "<p>Regards,<br>GA Manufacturing Team</p>"
+    html = html & "</div></body></html>"
+
+    ' ================= OUTLOOK =================
+    Dim OutApp As Object, OutMail As Object
+    Dim olNs As Object, olFolder As Object, olItem As Object
+    Dim subj As String, found As Boolean
+
+    Set OutApp = CreateObject("Outlook.Application")
+    Set olNs = OutApp.GetNamespace("MAPI")
+
+    subj = "GA Daily KPI Status - " & Format(refDate, "dd-mmm-yyyy")
+    found = False
+
+    Set olFolder = olNs.GetDefaultFolder(6)
+
+    For Each olItem In olFolder.Items
+        If TypeName(olItem) = "MailItem" Then
+            If olItem.Subject = subj Then
+                Set OutMail = olItem.ReplyAll
+                found = True
+                Exit For
+            End If
+        End If
+    Next olItem
+
+    If Not found Then
+        Set OutMail = OutApp.CreateItem(0)
+        With OutMail
+            .To = ""
+            .CC = ""
+            .Subject = subj
+            .htmlBody = html
+            .Display
+        End With
+    Else
+        With OutMail
+            .htmlBody = html & "<br><br>--- Previous Mail ---<br>" & .htmlBody
+            .Display
+        End With
+    End If
+
+End Sub
+
+https:'//script.google.com/macros/s/AKfycbxZupgn1OI0EuA1XG9RaZaCCqQmy82JBqrv1o3W6Y25XfVlknfagvP-mxIeuCc6cFe3rg/exec'
   };
   var projectsCache = [];
   var lastFetchError = null;
